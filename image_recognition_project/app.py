@@ -1,12 +1,21 @@
-from flask import Flask, render_template, request, jsonify
 import os
+from flask import Flask, render_template, request, jsonify
 from werkzeug.utils import secure_filename
 from PIL import Image
 import io
 import base64
 import json
+import logging
+from dotenv import load_dotenv
 from models import GeminiModel
 import google.generativeai as genai
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
@@ -25,9 +34,12 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Initialize the model
 try:
-    # Try to get API key from environment variable
-    api_key = os.getenv('GOOGLE_API_KEY')
+    # Get API key from environment variable
+    api_key = os.getenv('GEMINI_API_KEY')
     if not api_key:
+        logger.error("GEMINI_API_KEY not found in environment variables")
+        logger.info("Please create a .env file with your GEMINI_API_KEY")
+        logger.info("See .env.example for reference")
         # If not found, try to read from a file
         try:
             with open('gemini_api_key.txt', 'r') as f:
@@ -255,8 +267,12 @@ def generate_caption():
         }), 500
 
 if __name__ == '__main__':
-    import logging
-    logging.basicConfig(level=logging.DEBUG)
-    logger = logging.getLogger(__name__)
-    logger.info("Starting Flask server on port 5004 with debug mode enabled")
-    app.run(debug=True, port=5004)
+    # Ensure the upload folder exists
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    
+    # Get port from environment variable or use default
+    port = int(os.environ.get('PORT', 5000))
+    
+    # Run the app
+    logger.info(f"Starting Flask server on port {port}")
+    app.run(host='0.0.0.0', port=port, debug=True)

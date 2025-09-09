@@ -1,12 +1,13 @@
-# Image Recognition with PyTorch
+# VisionAI - Image Recognition & Captioning
 
-A powerful image recognition system using pre-trained deep learning models in PyTorch. This project supports both AlexNet and ResNet101 models for image classification.
+A web application that uses Google's Gemini AI to recognize objects in images and generate social media captions.
 
 ## Features
 
-- Support for multiple pre-trained models (AlexNet, ResNet101)
-- Easy-to-use command-line interface
-- Support for both local images and image URLs
+- Upload images for object recognition
+- Generate captions for social media platforms (Instagram, Twitter, LinkedIn, WhatsApp)
+- Clean and modern user interface
+- Responsive design that works on desktop and mobile
 - Top-k predictions with confidence scores
 - GPU acceleration support (if available)
 - Batch processing capabilities
