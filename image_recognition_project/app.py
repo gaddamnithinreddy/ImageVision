@@ -33,23 +33,19 @@ def request_entity_too_large(error):
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Initialize the model
-try:
-    # Get API key from environment variable
-    api_key = os.getenv('GEMINI_API_KEY')
-    if not api_key:
-        logger.error("GEMINI_API_KEY not found in environment variables")
-        logger.info("Please create a .env file with your GEMINI_API_KEY")
-        logger.info("See .env.example for reference")
-        # If not found, try to read from a file
-        try:
-            with open('gemini_api_key.txt', 'r') as f:
-                api_key = f.read().strip()
-        except FileNotFoundError:
-            api_key = 'YOUR_API_KEY_HERE'  # Will prompt user to set it
-    
-    model = GeminiModel(api_key=api_key)
-except Exception as e:
-    print(f"Error initializing Gemini model: {str(e)}")
+model = None
+api_key = os.getenv('GEMINI_API_KEY')
+
+if not api_key:
+    logger.error("GEMINI_API_KEY not found in environment variables")
+    logger.info("Please set the GEMINI_API_KEY environment variable")
+    logger.info("See .env.example for reference")
+else:
+    try:
+        model = GeminiModel(api_key=api_key)
+        logger.info("Successfully initialized Gemini model")
+    except Exception as e:
+        logger.error(f"Error initializing Gemini model: {str(e)}")
     model = None
 
 # Allowed file extensions
@@ -266,13 +262,18 @@ def generate_caption():
             'error': f'Error generating caption: {str(e)}'
         }), 500
 
-if __name__ == '__main__':
+def create_app():
     # Ensure the upload folder exists
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    return app
+
+if __name__ == '__main__':
+    # Create the app
+    app = create_app()
     
     # Get port from environment variable or use default
     port = int(os.environ.get('PORT', 5000))
     
     # Run the app
     logger.info(f"Starting Flask server on port {port}")
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
