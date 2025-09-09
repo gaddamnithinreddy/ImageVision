@@ -267,13 +267,40 @@ def create_app():
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     return app
 
+def find_available_port(start_port=5000, max_attempts=10):
+    import socket
+    port = start_port
+    for _ in range(max_attempts):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(('0.0.0.0', port))
+                return port
+        except OSError:
+            port += 1
+    raise OSError(f"No available ports in range {start_port}-{start_port + max_attempts - 1}")
+
 if __name__ == '__main__':
     # Create the app
     app = create_app()
     
-    # Get port from environment variable or use default
-    port = int(os.environ.get('PORT', 5000))
+    # Get port from environment variable or find an available one
+    try:
+        port = int(os.environ.get('PORT', 5000))
+        # Test if the port is available
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('0.0.0.0', port))
+    except (OSError, ValueError):
+        # If port is in use or invalid, find an available one
+        port = find_available_port(5000)
     
     # Run the app
     logger.info(f"Starting Flask server on port {port}")
-    app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
+    try:
+        app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
+    except OSError as e:
+        logger.error(f"Failed to start server: {e}")
+        if port == 5000:
+            # Try one more time with a different port
+            port = find_available_port(5001)
+            logger.info(f"Retrying with port {port}")
+            app.run(host='0.0.0.0', port=port, debug=False, use_reloader=False)
