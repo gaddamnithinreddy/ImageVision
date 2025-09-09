@@ -11,6 +11,14 @@ import google.generativeai as genai
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['MAX_CONTENT_PATH'] = 16 * 1024 * 1024  # 16MB max file size
+
+@app.errorhandler(413)
+def request_entity_too_large(error):
+    return jsonify({
+        'error': 'File too large',
+        'message': 'The file is larger than the 16MB limit. Please choose a smaller file.'
+    }), 413
 
 # Ensure upload folder exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -45,56 +53,139 @@ def index():
 
 @app.route('/recognize', methods=['POST'])
 def recognize():
-    if model is None:
-        return jsonify({'error': 'Gemini model not properly initialized. Please check your API key.'}), 500
+    logger = logging.getLogger(__name__)
+    try:
+        logger.info("\n=== New Recognition Request ===")
+        logger.info(f"Request content length: {request.content_length} bytes")
+        logger.info(f"Request files: {request.files}")
         
-    if 'file' not in request.files:
-        return jsonify({'error': 'No file part'}), 400
-    
-    file = request.files['file']
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
-    
-    if file and allowed_file(file.filename):
+        if model is None:
+            error_msg = 'Gemini model not properly initialized. Please check your API key.'
+            print(f"Error: {error_msg}")
+            return jsonify({'error': error_msg}), 500
+            
+        if 'file' not in request.files:
+            error_msg = 'No file part in the request.'
+            print(f"Error: {error_msg}")
+            return jsonify({'error': error_msg}), 400
+        
+        file = request.files['file']
+        print(f"Received file: {file.filename} ({file.content_length} bytes)")
+        
+        if file.filename == '':
+            error_msg = 'No file selected.'
+            print(f"Error: {error_msg}")
+            return jsonify({'error': error_msg}), 400
+        
+        if not file:
+            error_msg = 'No file data received.'
+            print(f"Error: {error_msg}")
+            return jsonify({'error': error_msg}), 400
+            
+        if not allowed_file(file.filename):
+            error_msg = f'Invalid file type. Supported formats: {ALLOWED_EXTENSIONS}'
+            print(f"Error: {error_msg}")
+            return jsonify({'error': error_msg}), 400
+        
         try:
-            # Read image file
+            # Read and verify image file
             img_bytes = file.read()
-            img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
+            if not img_bytes:
+                raise ValueError("Received empty file")
+                
+            print(f"Read {len(img_bytes)} bytes of image data")
+            
+            # Try to open the image to verify it's valid
+            try:
+                img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
+                print(f"Successfully loaded image: {img.width}x{img.height} pixels")
+            except Exception as img_error:
+                raise ValueError(f"Invalid image file: {str(img_error)}")
             
             # Preprocess image for Gemini
+            print("Preprocessing image...")
             img_data = model.preprocess_image(img)
             
-            # Make prediction
-            predictions = model.predict(img_data, top_k=5)
+            # Make prediction with timeout
+            print("Sending image to Gemini model...")
+            try:
+                logger.info("Sending request to Gemini model...")
+                predictions = model.predict(img_data, top_k=5, timeout_seconds=30)
+                logger.info(f"Received predictions: {predictions}")
+                
+                # Validate predictions
+                if not isinstance(predictions, list):
+                    raise ValueError(f"Unexpected response format: {type(predictions).__name__}")
+                    
+                if not predictions:
+                    logger.warning("Received empty predictions list from model")
+            except Exception as e:
+                error_msg = str(e)
+                if "timed out" in error_msg.lower():
+                    raise Exception("The request to the AI model timed out. Please try again with a smaller image or check your internet connection.")
+                elif "blocked" in error_msg.lower():
+                    raise Exception("This image was blocked by content safety filters. Please try a different image.")
+                else:
+                    raise Exception(f"Error processing image: {error_msg}")
             
             # Convert image to base64 for display
             buffered = io.BytesIO()
             img.save(buffered, format="JPEG")
             img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')
             
-            # Ensure confidence is between 0 and 1
+            # Process and validate predictions
             processed_predictions = []
-            for pred in predictions:
-                confidence = float(pred.get('confidence', 0))
-                # Ensure confidence is between 0 and 1
-                confidence = max(0.0, min(1.0, confidence))
+            for i, pred in enumerate(predictions, 1):
+                if not isinstance(pred, dict):
+                    print(f"Warning: Prediction {i} is not a dictionary: {pred}")
+                    continue
+                    
+                pred_class = str(pred.get('class', f'Unknown {i}')).strip()
+                try:
+                    confidence = float(pred.get('confidence', 0))
+                    confidence = max(0.0, min(1.0, confidence))  # Clamp to [0, 1]
+                except (ValueError, TypeError) as e:
+                    print(f"Warning: Invalid confidence value in prediction {i}: {pred.get('confidence')}")
+                    confidence = 0.0
+                
                 processed_predictions.append({
-                    'class': pred.get('class', 'Unknown'),
+                    'class': pred_class,
                     'confidence': confidence
                 })
+            
+            if not processed_predictions:
+                processed_predictions.append({
+                    'class': 'No objects detected',
+                    'confidence': 0.0
+                })
                 
+            print(f"Returning {len(processed_predictions)} predictions")
             return jsonify({
                 'image': f"data:image/jpeg;base64,{img_str}",
                 'predictions': processed_predictions
             })
             
         except Exception as e:
+            error_msg = f'Error processing image: {str(e)}'
+            print(f"ERROR: {error_msg}")
+            import traceback
+            traceback.print_exc()
             return jsonify({
-                'error': f'Error processing image: {str(e)}',
-                'details': str(e)
+                'error': 'Error processing image',
+                'details': str(e),
+                'type': type(e).__name__
             }), 500
-    
-    return jsonify({'error': 'Invalid file type. Supported formats: PNG, JPG, JPEG, GIF'}), 400
+            
+    except Exception as e:
+        error_msg = f'Unexpected error in /recognize endpoint: {str(e)}'
+        print(f"CRITICAL ERROR: {error_msg}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'error': 'Internal server error',
+            'details': str(e),
+            'type': type(e).__name__
+        }), 500
 
 @app.route('/generate-caption', methods=['POST'])
 def generate_caption():
@@ -164,4 +255,8 @@ def generate_caption():
         }), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger(__name__)
+    logger.info("Starting Flask server on port 5004 with debug mode enabled")
+    app.run(debug=True, port=5004)

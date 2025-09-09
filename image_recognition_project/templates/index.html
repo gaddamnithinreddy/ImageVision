@@ -27,6 +27,21 @@
         }
         .loading {
             display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
         .prediction-item {
             transition: all 0.3s ease;
@@ -110,20 +125,48 @@
 
                 <!-- Loading Indicator -->
                 <div id="loading" class="loading text-center py-12">
-                    <div class="inline-block relative">
-                        <div class="w-16 h-16 border-4 border-indigo-100 rounded-full"></div>
-                        <div class="absolute top-0 left-0 w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                    <div class="inline-flex flex-col items-center">
+                        <!-- Animated circles -->
+                        <div class="relative w-24 h-24 mb-6">
+                            <!-- Outer circle -->
+                            <div class="absolute inset-0 rounded-full border-4 border-indigo-100"></div>
+                            <!-- Animated circle -->
+                            <div class="absolute inset-0 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin"></div>
+                            <!-- Pulsing dot -->
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="w-3 h-3 bg-indigo-500 rounded-full animate-pulse"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Progress text -->
+                        <div class="w-full max-w-xs mx-auto">
+                            <div class="flex justify-between text-sm text-gray-500 mb-1">
+                                <span>Processing</span>
+                                <span id="loading-percentage">0%</span>
+                            </div>
+                            <!-- Progress bar -->
+                            <div class="w-full bg-gray-200 rounded-full h-2 mb-4 overflow-hidden">
+                                <div id="loading-progress" class="bg-indigo-500 h-2 rounded-full transition-all duration-300 ease-out w-0"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Status message -->
+                        <p id="loading-text" class="text-gray-600 font-medium">Analyzing your image</p>
+                        <p class="text-sm text-gray-400 mt-1">This usually takes a few seconds</p>
+                        
+                        <!-- Loading dots animation container -->
+                        <div class="mt-2 h-6">
+                            <div id="loading-dots" class="inline-block">. . .</div>
+                        </div>
                     </div>
-                    <p class="mt-6 text-gray-600 font-medium">Analyzing your image...</p>
-                    <p class="text-sm text-gray-400 mt-2">This usually takes a few seconds</p>
                 </div>
             </div>
         </div>
         
         <!-- Footer -->
         <footer class="mt-16 text-center text-gray-500 text-sm">
-            <p>Powered by Gemini AI • <a href="#" class="text-indigo-600 hover:underline">Privacy Policy</a> • <a href="#" class="text-indigo-600 hover:underline">Terms</a></p>
-            <p class="mt-2">© 2023 VisionAI. All rights reserved.</p>
+            <p> • <a href="#" class="text-indigo-600 hover:underline">Privacy Policy</a> • <a href="#" class="text-indigo-600 hover:underline">Terms</a></p>
+            <p class="mt-2">© 2025 VisionAI. All rights reserved.</p>
         </footer>
     </div>
 
@@ -195,17 +238,48 @@
             }
         }
 
+        // Update loading animation
+        function updateLoadingAnimation(progress) {
+            const progressBar = document.getElementById('loading-progress');
+            const percentage = document.getElementById('loading-percentage');
+            const loadingText = document.getElementById('loading-text');
+            const loadingDots = document.getElementById('loading-dots');
+            
+            // Update progress bar
+            progressBar.style.width = `${progress}%`;
+            percentage.textContent = `${Math.min(progress, 100)}%`;
+            
+            // Update status text based on progress
+            if (progress < 30) {
+                loadingText.textContent = 'Uploading image';
+            } else if (progress < 70) {
+                loadingText.textContent = 'Processing image';
+            } else {
+                loadingText.textContent = 'Analyzing content';
+            }
+            
+            // Animate dots - ensure we don't get negative values
+            const dotCount = Math.max(0, Math.min(3, Math.floor(progress / 33) + 1));
+            const spaceCount = Math.max(0, 3 - dotCount);
+            loadingDots.textContent = '.'.repeat(dotCount) + ' '.repeat(spaceCount);
+        }
+        
         // Upload file to server
         function uploadFile(file) {
-            // Show loading state
+            // Show loading state with animation
             uploadArea.style.display = 'none';
             loading.style.display = 'block';
             results.style.display = 'none';
+            
+            // Reset progress
+            updateLoadingAnimation(0);
             
             // Create preview
             const reader = new FileReader();
             reader.onload = function(e) {
                 preview.src = e.target.result;
+                // Initial progress update after preview is loaded
+                updateLoadingAnimation(10);
             };
             reader.readAsDataURL(file);
             
@@ -213,22 +287,118 @@
             const formData = new FormData();
             formData.append('file', file);
             
-            // Send to server
+            // Send to server with timeout and progress tracking
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+            
+            // Simulate progress updates
+            let progress = 10;
+            const progressInterval = setInterval(() => {
+                if (progress < 90) {
+                    progress += Math.random() * 10;
+                    updateLoadingAnimation(Math.min(progress, 90));
+                }
+            }, 300);
+            
+            // Complete the progress bar when request is about to be sent
+            updateLoadingAnimation(30);
+            
+            // Start the actual fetch request
             fetch('/recognize', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                signal: controller.signal
             })
-            .then(response => response.json())
+            .then(async response => {
+                clearTimeout(timeoutId);
+                clearInterval(progressInterval);
+                
+                // Move progress to 95% when response is received
+                updateLoadingAnimation(95);
+                
+                if (response.status === 413) {
+                    throw new Error('File too large. Please upload an image smaller than 16MB.');
+                }
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text);
+                    throw new Error('Server returned non-JSON response');
+                }
+                return response.json();
+            })
             .then(data => {
+                // Complete the progress bar
+                updateLoadingAnimation(100);
+                
+                if (!data) {
+                    throw new Error('No data received from server');
+                }
                 if (data.error) {
                     throw new Error(data.error);
                 }
-                displayResults(data);
+                
+                // Small delay to show 100% progress before displaying results
+                setTimeout(() => {
+                    displayResults(data);
+                }, 300);
             })
             .catch(error => {
+                clearInterval(progressInterval);
                 console.error('Error:', error);
-                alert('Error processing image: ' + error.message);
-                resetUpload();
+                
+                let errorMessage = 'Error processing image';
+                if (error.name === 'AbortError') {
+                    errorMessage = 'Request timed out. Please try again.';
+                } else if (error.message.includes('Failed to fetch')) {
+                    errorMessage = 'Failed to connect to the server. Please check your connection.';
+                } else if (error.message.includes('non-JSON')) {
+                    errorMessage = 'Server returned an invalid response. Please try again.';
+                } else {
+                    errorMessage = error.message || errorMessage;
+                }
+                
+                // Show error in a more user-friendly way
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded animate-fade-in';
+                errorDiv.innerHTML = `
+                    <div class='flex items-start'>
+                        <div class='flex-shrink-0 mt-0.5'>
+                            <svg class='h-5 w-5 text-red-500' fill='currentColor' viewBox='0 0 20 20'>
+                                <path fill-rule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z' clip-rule='evenodd' />
+                            </svg>
+                        </div>
+                        <div class='ml-3'>
+                            <h3 class='text-sm font-medium text-red-800'>Error processing image</h3>
+                            <div class='mt-1 text-sm text-red-700'>${errorMessage}</div>
+                            <div class='mt-2'>
+                                <button type='button' class='rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-800 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 focus:ring-offset-red-50'>
+                                    Try again
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Add click handler for the retry button
+                const retryButton = errorDiv.querySelector('button');
+                retryButton.addEventListener('click', () => {
+                    errorDiv.remove();
+                    uploadFile(file);
+                });
+                
+                // Insert error message before the upload area
+                uploadArea.parentNode.insertBefore(errorDiv, uploadArea);
+                
+                // Reset the UI after a delay
+                setTimeout(() => {
+                    errorDiv.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                    setTimeout(() => {
+                        errorDiv.remove();
+                        resetUpload();
+                    }, 300);
+                }, 8000);
             });
         }
         
@@ -279,16 +449,16 @@
                             <div class="mt-6 border-t border-gray-200 pt-4">
                                 <h3 class="text-md font-semibold text-gray-800 mb-3">Generate Social Media Caption</h3>
                                 <div class="flex flex-wrap gap-2 mb-3">
-                                    <button onclick="generateCaption('instagram')" class="px-3 py-1.5 bg-pink-100 text-pink-700 rounded-full text-xs font-medium hover:bg-pink-200 transition-colors">
+                                    <button onclick="generateCaption('instagram', ${index})" class="px-3 py-1.5 bg-pink-100 text-pink-700 rounded-full text-xs font-medium hover:bg-pink-200 transition-colors">
                                         <i class="fab fa-instagram mr-1"></i> Instagram
                                     </button>
-                                    <button onclick="generateCaption('twitter')" class="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-200 transition-colors">
+                                    <button onclick="generateCaption('twitter', ${index})" class="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-200 transition-colors">
                                         <i class="fab fa-twitter mr-1"></i> Twitter
                                     </button>
-                                    <button onclick="generateCaption('linkedin')" class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-100 transition-colors">
+                                    <button onclick="generateCaption('linkedin', ${index})" class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-100 transition-colors">
                                         <i class="fab fa-linkedin mr-1"></i> LinkedIn
                                     </button>
-                                    <button onclick="generateCaption('whatsapp')" class="px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-xs font-medium hover:bg-green-200 transition-colors">
+                                    <button onclick="generateCaption('whatsapp', ${index})" class="px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-xs font-medium hover:bg-green-200 transition-colors">
                                         <i class="fab fa-whatsapp mr-1"></i> WhatsApp
                                     </button>
                                 </div>

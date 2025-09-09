@@ -18,6 +18,38 @@ var/
 wheels/
 *.egg-info/
 .installed.cfg
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# API keys
+gemini_api_key.txt
+
+# IDE
+.vscode/
+.idea/
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Logs
+*.log
+
+# Local development
+*.local
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 *.egg
 
 # Virtual Environment
