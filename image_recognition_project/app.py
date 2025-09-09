@@ -18,10 +18,22 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
+# Get the base directory of the project
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Set up the Flask application
+app = Flask(__name__, 
+           static_folder=os.path.join(BASE_DIR, 'static'),
+           static_url_path='',
+           template_folder=os.path.join(BASE_DIR, 'templates'))
+
+# Configure application
+app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'static', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-app.config['MAX_CONTENT_PATH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0  # Disable caching during development
+
+# Ensure upload folder exists
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 @app.errorhandler(413)
 def request_entity_too_large(error):
@@ -56,9 +68,13 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@app.route('/')
+@app.route('/', methods=['GET'])
 def index():
-    return render_template('index.html')
+    try:
+        return render_template('index.html')
+    except Exception as e:
+        logger.error(f"Error rendering template: {str(e)}")
+        return f"Error loading page: {str(e)}"
 
 @app.route('/recognize', methods=['POST'])
 def recognize():
