@@ -3,9 +3,10 @@ from flask import Flask, render_template, request, jsonify
 from werkzeug.utils import secure_filename
 from PIL import Image
 import io
-import base64
+import os
 import json
 import logging
+import socket
 from dotenv import load_dotenv
 from models import GeminiModel
 import google.generativeai as genai
