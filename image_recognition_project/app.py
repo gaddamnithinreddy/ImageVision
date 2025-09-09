@@ -280,6 +280,9 @@ def find_available_port(start_port=5000, max_attempts=10):
             port += 1
     raise OSError(f"No available ports in range {start_port}-{start_port + max_attempts - 1}")
 
+# Disable Streamlit file watcher
+os.environ['STREAMLIT_SERVER_FILE_WATCHER_TYPE'] = 'none'
+
 if __name__ == '__main__':
     # Create the app
     app = create_app()
