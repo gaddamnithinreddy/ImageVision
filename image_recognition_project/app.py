@@ -7,7 +7,11 @@ import json
 import logging
 import socket
 from dotenv import load_dotenv
-from models import GeminiModel
+# Fixed import to work in both direct execution and module execution contexts
+try:
+    from models import GeminiModel
+except ImportError:
+    from image_recognition_project.models import GeminiModel
 import google.generativeai as genai
 import base64
 
