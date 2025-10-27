@@ -19,13 +19,15 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Get the base directory of the project
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# Fixed the BASE_DIR calculation to work correctly in different deployment environments
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+PROJECT_ROOT = os.path.dirname(BASE_DIR)
 
-# Set up the Flask application
+# Set up the Flask application with corrected paths
 app = Flask(__name__, 
-           static_folder=os.path.join(BASE_DIR, 'static'),
+           static_folder=os.path.join(PROJECT_ROOT, 'static'),
            static_url_path='/static',
-           template_folder=os.path.join(BASE_DIR, 'image_recognition_project', 'templates'))
+           template_folder=os.path.join(BASE_DIR, 'templates'))
 
 # Add security headers including CSP
 @app.after_request
@@ -52,7 +54,7 @@ def add_security_headers(response):
     return response
 
 # Configure application
-app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'static', 'uploads')
+app.config['UPLOAD_FOLDER'] = os.path.join(PROJECT_ROOT, 'static', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0  # Disable caching during development
 
