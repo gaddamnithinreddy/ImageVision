@@ -453,36 +453,37 @@ def main():
             """)
     
     with tab2:
-        st.subheader("How VisionAI Works")
+        st.subheader("How Image Recognition Project Works")
         st.markdown("""
-        ### Technology Stack
-        - **AI Model**: Google's Gemini 2.0 Flash for image recognition
-        - **Framework**: Streamlit for the web interface
-        - **Image Processing**: PIL (Python Imaging Library)
-        
-        ### Process Flow
-        1. **Image Upload**: You upload an image file
-        2. **Preprocessing**: Image is converted to the proper format
-        3. **AI Analysis**: Gemini model analyzes the image content
-        4. **Prediction**: Top 5 recognized objects with confidence scores
-        5. **Caption Generation**: Optional social media captions
-        
-        ### Privacy & Security
-        - Images are processed in real-time and not stored
-        - Your API key is securely loaded from environment variables
-        - All processing happens through Google's secure AI APIs
-        """)
-        
-        st.subheader("About the AI Model")
+            ### 🧠 Technology Stack
+            - **AI Models**: ResNet101 and AlexNet (pre-trained on ImageNet, fine-tuned on Animal-10 dataset)
+            - **Framework**: PyTorch for deep learning and model inference
+            - **Interface**: Streamlit for user-friendly image upload and display
+            - **Image Processing**: PIL (Python Imaging Library) for loading and transforming images
+
+            ### 🔄 Process Flow
+            1. **Image Upload**: You upload or provide an image file for classification  
+            2. **Preprocessing**: Image is resized, normalized, and converted into a PyTorch tensor  
+            3. **Model Selection**: Choose between ResNet101 (high accuracy) or AlexNet (lightweight and fast)  
+            4. **Prediction**: The model performs inference and returns the top 5 predicted animal classes with confidence scores  
+            5. **Result Display**: Predictions are displayed in real-time on the Streamlit interface, with optional JSON export
+
+            ### 🔐 Privacy & Security
+            - Images are processed locally on your system — no cloud or API calls  
+            - No external API keys or third-party services required  
+            - Data is not stored; results are generated in real time
+            """)
+
+        st.subheader("About the AI Models")
         st.markdown("""
-        VisionAI uses Google's Gemini 2.0 Flash model, which is optimized for:
-        - Fast image recognition
-        - High accuracy object detection
-        - Natural language understanding
-        - Multi-modal capabilities (text and image processing)
-        
-        The model can recognize thousands of objects, scenes, and concepts in images.
-        """)
+            This project leverages **ResNet101** and **AlexNet**, two powerful convolutional neural networks:
+
+            - **ResNet101**: A deep residual network known for its skip connections and exceptional accuracy  
+            - **AlexNet**: A lightweight, fast model suitable for quick inference and limited compute environments  
+
+            Both models have been **fine-tuned on the Animal-10 dataset** from Kaggle, enabling accurate classification of common animal categories such as dogs, cats, horses, elephants, and more.
+            """)
+
 
 if __name__ == "__main__":
     main()
