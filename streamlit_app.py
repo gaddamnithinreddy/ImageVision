@@ -8,8 +8,7 @@ import subprocess
 import os
 import time
 import requests
-
-# Import components
+import threading
 from streamlit.components.v1 import iframe
 
 # Title for the Streamlit app
@@ -22,24 +21,28 @@ st.info("This application uses a Flask backend running on port 5000. Please wait
 # Function to start the Flask app
 def start_flask_app():
     """Start the Flask application in the background."""
-    # Change to the image_recognition_project directory
-    os.chdir("image_recognition_project")
-    
-    # Start Flask app in background
-    process = subprocess.Popen([
-        "python", "app.py"
-    ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    
-    os.chdir("..")  # Go back to the root directory
-    return process
+    try:
+        # Change to the image_recognition_project directory
+        os.chdir("image_recognition_project")
+        
+        # Start Flask app in background
+        process = subprocess.Popen([
+            "python", "app.py"
+        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        
+        os.chdir("..")  # Go back to the root directory
+        return process
+    except Exception as e:
+        st.error(f"Failed to start Flask app: {str(e)}")
+        return None
 
 # Function to check if Flask app is running
 def is_flask_running():
     """Check if the Flask application is running."""
     try:
-        response = requests.get("http://localhost:5000", timeout=1)
+        response = requests.get("http://localhost:5000", timeout=5)
         return response.status_code == 200
-    except:
+    except Exception as e:
         return False
 
 # Start the Flask app
@@ -47,17 +50,27 @@ if 'flask_started' not in st.session_state:
     st.session_state.flask_started = True
     with st.spinner("Starting Flask backend server..."):
         flask_process = start_flask_app()
-        # Wait for the Flask app to start
-        for i in range(30):  # Wait up to 30 seconds
-            if is_flask_running():
-                st.success("Flask backend server started successfully!")
-                break
-            time.sleep(1)
+        if flask_process:
+            # Wait for the Flask app to start (up to 30 seconds)
+            flask_ready = False
+            for i in range(30):
+                if is_flask_running():
+                    st.success("Flask backend server started successfully!")
+                    flask_ready = True
+                    break
+                time.sleep(1)
+            
+            if not flask_ready:
+                st.warning("Flask server may still be starting. Proceeding anyway...")
         else:
-            st.error("Failed to start Flask backend server. Please check the logs.")
+            st.error("Failed to start Flask backend server.")
 
 # Display the Flask app in an iframe
-iframe("http://localhost:5000", height=800, scrolling=True)
+iframe(
+    "http://localhost:5000", 
+    height=800, 
+    scrolling=True
+)
 
 # Add some information
 st.markdown("""
