@@ -48,12 +48,12 @@ def is_flask_running():
 # Start the Flask app
 if 'flask_started' not in st.session_state:
     st.session_state.flask_started = True
-    with st.spinner("Starting Flask backend server..."):
+    with st.spinner("Starting Flask backend server... This may take a few moments."):
         flask_process = start_flask_app()
         if flask_process:
-            # Wait for the Flask app to start (up to 30 seconds)
+            # Wait for the Flask app to start (up to 45 seconds)
             flask_ready = False
-            for i in range(30):
+            for i in range(45):
                 if is_flask_running():
                     st.success("Flask backend server started successfully!")
                     flask_ready = True
@@ -61,16 +61,26 @@ if 'flask_started' not in st.session_state:
                 time.sleep(1)
             
             if not flask_ready:
-                st.warning("Flask server may still be starting. Proceeding anyway...")
+                st.warning("Flask server is still starting. You may need to refresh the page in a moment.")
         else:
             st.error("Failed to start Flask backend server.")
 
-# Display the Flask app in an iframe
-iframe(
-    "http://localhost:5000", 
-    height=800, 
-    scrolling=True
-)
+# Add a refresh button
+if st.button("Refresh Application"):
+    st.rerun()
+
+# Check if Flask is running and display accordingly
+if is_flask_running():
+    st.success("Flask server is running! Loading application...")
+    # Display the Flask app in an iframe
+    iframe(
+        "http://localhost:5000", 
+        height=800, 
+        scrolling=True
+    )
+else:
+    st.warning("Flask server is still starting. Please wait a moment and click 'Refresh Application' above.")
+    st.info("The Flask backend needs some time to initialize. This is normal during first startup.")
 
 # Add some information
 st.markdown("""
