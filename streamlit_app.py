@@ -1,4 +1,21 @@
 """
+Streamlit app entry point for VisionAI.
+This is the main file that Streamlit Cloud will run.
+"""
+
+import sys
+import os
+
+# Add the current directory to Python path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+# Run the pure Streamlit implementation
+import image_recognition_streamlit
+
+if __name__ == "__main__":
+    image_recognition_streamlit.main()
+
+"""
 Streamlit wrapper for the Flask application.
 This file is required for Streamlit Cloud to recognize and deploy the application correctly.
 """
