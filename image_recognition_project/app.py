@@ -7,7 +7,7 @@ import json
 import logging
 import socket
 from dotenv import load_dotenv
-from image_recognition_project.models import GeminiModel
+from models import GeminiModel
 import google.generativeai as genai
 import base64
 
