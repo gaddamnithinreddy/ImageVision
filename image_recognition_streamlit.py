@@ -425,9 +425,11 @@ def main():
                             <div style="background: #f3f4f6; border-radius: 0.5rem; padding: 1rem; margin-top: 1rem;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                                     <span style="font-weight: 500;">Suggested Caption for {selected_platform}:</span>
-                                    <button onclick="navigator.clipboard.writeText('{caption}')" style="background: #6366f1; color: white; border: none; border-radius: 0.25rem; padding: 0.25rem 0.5rem; cursor: pointer;">Copy</button>
                                 </div>
                                 <div style="white-space: pre-wrap; font-size: 0.9rem;">{caption}</div>
+                                <div style="margin-top: 0.5rem; font-size: 0.8rem; color: #6b7280;">
+                                    Copy the caption above manually (Ctrl+C / Cmd+C)
+                                </div>
                             </div>
                         """, unsafe_allow_html=True)
                 
