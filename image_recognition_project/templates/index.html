@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Removed CSP meta tag as it's being set via HTTP headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <!-- Removed X-Frame-Options meta tag as it can only be set via HTTP headers -->
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <title>VisionAI - Advanced Image Recognition</title>
+    <!-- Added cache-busting parameter to force reload CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css?v=1" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css?v=1">
+    <style>
+        @font-face {
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 300;
+            font-display: swap;
+            src: url('https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2') format('woff2');
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+        }
+
+        @font-face {
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+            src: url('https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2') format('woff2');
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+        }
+
+        @font-face {
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 500;
+            font-display: swap;
+            src: url('https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2') format('woff2');
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+        }
+
+        @font-face {
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 600;
+            font-display: swap;
+            src: url('https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2') format('woff2');
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+        }
+
+        @font-face {
+            font-family: 'Inter';
+            font-style: normal;
+            font-weight: 700;
+            font-display: swap;
+            src: url('https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2') format('woff2');
+            unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif !important;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            min-height: 100vh;
+        }
+
+        /* Prevent loading of local font files */
+        @font-face {
+            font-family: 'Inter-Bold';
+            src: url('https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2') format('woff2');
+        }
+
+        @font-face {
+            font-family: 'Inter-Regular';
+            src: url('https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2') format('woff2');
+        }
+
+        @font-face {
+            font-family: 'Inter-Medium';
+            src: url('https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2') format('woff2');
+        }
+
+        @font-face {
+            font-family: 'Inter-SemiBold';
+            src: url('https://fonts.gstatic.com/s/inter/v12/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7.woff2') format('woff2');
+        }
+
+        .drop-zone {
+            border: 2px dashed #9ca3af;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(8px);
+        }
+
+        .drop-zone:hover,
+        .drop-zone.drag-over {
+            border-color: #6366f1;
+            background: rgba(255, 255, 255, 0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading {
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .prediction-item {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+
+        .prediction-item:hover {
+            transform: translateX(5px);
+            border-left-color: #6366f1;
+        }
+
+        .btn {
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .gradient-text {
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen">
+    <div class="container mx-auto px-4 py-8 sm:py-12">
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold mb-3">
+                <span class="gradient-text">VisionAI</span>
+            </h1>
+            <p class="text-gray-600 max-w-2xl mx-auto">
+                Upload an image and let our AI analyze its contents with advanced computer vision technology.
+            </p>
+        </header>
+
+        <div
+            class="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden transform transition-all duration-300 hover:shadow-2xl">
+            <div class="p-6 sm:p-8">
+                <!-- Upload Area -->
+                <div id="upload-area">
+                    <div class="drop-zone rounded-xl p-8 sm:p-12 text-center cursor-pointer transition-all duration-300"
+                        id="drop-zone">
+                        <div class="w-20 h-20 mx-auto mb-4 bg-indigo-50 rounded-full flex items-center justify-center">
+                            <svg class="h-10 w-10 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                </path>
+                            </svg>
+                        </div>
+                        <h3 class="mt-4 text-xl font-semibold text-gray-800">Drag & drop your image here</h3>
+                        <p class="mt-2 text-gray-500">or <span class="text-indigo-600 font-medium">browse files</span>
+                            from your device</p>
+                        <p class="mt-2 text-sm text-gray-400">Supports: JPG, PNG, GIF (Max 5MB)</p>
+                        <input type="file" id="file-input" class="hidden" accept="image/*">
+                    </div>
+                </div>
+
+                <!-- Results -->
+                <div id="results" class="hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">Analysis Results</h2>
+                    </div>
+
+                    <div class="flex flex-col lg:flex-row gap-8">
+                        <!-- Image Preview -->
+                        <div class="w-full lg:w-1/2">
+                            <div class="bg-gray-50 rounded-xl overflow-hidden shadow-sm border border-gray-100">
+                                <img id="preview" src="" alt="Preview" class="w-full h-auto max-h-96 object-contain">
+                            </div>
+                        </div>
+
+                        <!-- Predictions -->
+                        <div class="w-full lg:w-1/2">
+                            <div class="bg-gray-50 rounded-xl p-6 h-full">
+                                <h3 class="text-lg font-semibold text-gray-800 mb-4">Confidence Scores</h3>
+                                <div id="predictions" class="space-y-3">
+                                    <!-- Predictions will be inserted here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading Indicator -->
+                <div id="loading" class="loading text-center py-12">
+                    <div class="inline-flex flex-col items-center">
+                        <!-- Animated circles -->
+                        <div class="relative w-24 h-24 mb-6">
+                            <!-- Outer circle -->
+                            <div class="absolute inset-0 rounded-full border-4 border-indigo-100"></div>
+                            <!-- Animated circle -->
+                            <div
+                                class="absolute inset-0 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin">
+                            </div>
+                            <!-- Pulsing dot -->
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="w-3 h-3 bg-indigo-500 rounded-full animate-pulse"></div>
+                            </div>
+                        </div>
+
+                        <!-- Progress text -->
+                        <div class="w-full max-w-xs mx-auto">
+                            <div class="flex justify-between text-sm text-gray-500 mb-1">
+                                <span>Processing</span>
+                                <span id="loading-percentage">0%</span>
+                            </div>
+                            <!-- Progress bar -->
+                            <div class="w-full bg-gray-200 rounded-full h-2 mb-4 overflow-hidden">
+                                <div id="loading-progress"
+                                    class="bg-indigo-500 h-2 rounded-full transition-all duration-300 ease-out w-0">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status message -->
+                        <p id="loading-text" class="text-gray-600 font-medium">Analyzing your image</p>
+                        <p class="text-sm text-gray-400 mt-1">This usually takes a few seconds</p>
+
+                        <!-- Loading dots animation container -->
+                        <div class="mt-2 h-6">
+                            <div id="loading-dots" class="inline-block">. . .</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-16 text-center text-gray-500 text-sm">
+            <p> • <a href="#" class="text-indigo-600 hover:underline">Privacy Policy</a> • <a href="#"
+                    class="text-indigo-600 hover:underline">Terms</a></p>
+            <p class="mt-2">© 2025 VisionAI. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script>
+        // DOM Elements
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const results = document.getElementById('results');
+        const preview = document.getElementById('preview');
+        const predictions = document.getElementById('predictions');
+        const loading = document.getElementById('loading');
+        const uploadArea = document.getElementById('upload-area');
+
+        // Event Listeners
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        // Highlight drop zone when item is dragged over it
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        // Handle dropped files
+        dropZone.addEventListener('drop', handleDrop, false);
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFiles);
+
+        // Prevent default drag behaviors
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        // Highlight drop zone
+        function highlight() {
+            dropZone.classList.add('border-indigo-500', 'bg-indigo-50');
+            dropZone.classList.add('drag-over');
+        }
+
+        // Remove highlight from drop zone
+        function unhighlight() {
+            dropZone.classList.remove('border-indigo-500', 'bg-indigo-50');
+            dropZone.classList.remove('drag-over');
+        }
+
+        // Handle dropped files
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles({ target: { files } });
+        }
+
+        // Process selected files
+        function handleFiles(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type.startsWith('image/')) {
+                    uploadFile(file);
+                } else {
+                    alert('Please select an image file (JPG, PNG, GIF)');
+                }
+            }
+        }
+
+        // Update loading animation
+        function updateLoadingAnimation(progress) {
+            const progressBar = document.getElementById('loading-progress');
+            const percentage = document.getElementById('loading-percentage');
+            const loadingText = document.getElementById('loading-text');
+            const loadingDots = document.getElementById('loading-dots');
+
+            // Update progress bar
+            progressBar.style.width = `${progress}%`;
+            percentage.textContent = `${Math.min(progress, 100)}%`;
+
+            // Update status text based on progress
+            if (progress < 30) {
+                loadingText.textContent = 'Uploading image';
+            } else if (progress < 70) {
+                loadingText.textContent = 'Processing image';
+            } else {
+                loadingText.textContent = 'Analyzing content';
+            }
+
+            // Animate dots - ensure we don't get negative values
+            const dotCount = Math.max(0, Math.min(3, Math.floor(progress / 33) + 1));
+            const spaceCount = Math.max(0, 3 - dotCount);
+            loadingDots.textContent = '.'.repeat(dotCount) + ' '.repeat(spaceCount);
+        }
+
+        // Upload file to server
+        function uploadFile(file) {
+            // Show loading state with animation
+            uploadArea.style.display = 'none';
+            loading.style.display = 'block';
+            results.style.display = 'none';
+
+            // Reset progress
+            updateLoadingAnimation(0);
+
+            // Create preview
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                preview.src = e.target.result;
+                // Initial progress update after preview is loaded
+                updateLoadingAnimation(10);
+            };
+            reader.readAsDataURL(file);
+
+            // Create form data
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Send to server with timeout and progress tracking
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+            // Simulate progress updates
+            let progress = 10;
+            const progressInterval = setInterval(() => {
+                if (progress < 90) {
+                    progress += Math.random() * 10;
+                    updateLoadingAnimation(Math.min(progress, 90));
+                }
+            }, 300);
+
+            // Complete the progress bar when request is about to be sent
+            updateLoadingAnimation(30);
+
+            // Start the actual fetch request
+            fetch('/recognize', {
+                method: 'POST',
+                body: formData,
+                signal: controller.signal
+            })
+                .then(async response => {
+                    clearTimeout(timeoutId);
+                    clearInterval(progressInterval);
+
+                    // Move progress to 95% when response is received
+                    updateLoadingAnimation(95);
+
+                    if (response.status === 413) {
+                        throw new Error('File too large. Please upload an image smaller than 16MB.');
+                    }
+
+                    const contentType = response.headers.get('content-type');
+                    if (!contentType || !contentType.includes('application/json')) {
+                        const text = await response.text();
+                        console.error('Non-JSON response:', text);
+                        throw new Error('Server returned non-JSON response');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Complete the progress bar
+                    updateLoadingAnimation(100);
+
+                    if (!data) {
+                        throw new Error('No data received from server');
+                    }
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+
+                    // Small delay to show 100% progress before displaying results
+                    setTimeout(() => {
+                        displayResults(data);
+                    }, 300);
+                })
+                .catch(error => {
+                    clearInterval(progressInterval);
+                    console.error('Error:', error);
+
+                    let errorMessage = 'Error processing image';
+                    if (error.name === 'AbortError') {
+                        errorMessage = 'Request timed out. Please try again.';
+                    } else if (error.message.includes('Failed to fetch')) {
+                        errorMessage = 'Failed to connect to the server. Please check your connection.';
+                    } else if (error.message.includes('non-JSON')) {
+                        errorMessage = 'Server returned an invalid response. Please try again.';
+                    } else {
+                        errorMessage = error.message || errorMessage;
+                    }
+
+                    // Show error in a more user-friendly way
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded animate-fade-in';
+                    errorDiv.innerHTML = `
+                    <div class='flex items-start'>
+                        <div class='flex-shrink-0 mt-0.5'>
+                            <svg class='h-5 w-5 text-red-500' fill='currentColor' viewBox='0 0 20 20'>
+                                <path fill-rule='evenodd' d='M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z' clip-rule='evenodd' />
+                            </svg>
+                        </div>
+                        <div class='ml-3'>
+                            <h3 class='text-sm font-medium text-red-800'>Error processing image</h3>
+                            <div class='mt-1 text-sm text-red-700'>${errorMessage}</div>
+                            <div class='mt-2'>
+                                <button type='button' class='rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-800 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2 focus:ring-offset-red-50'>
+                                    Try again
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                    // Add click handler for the retry button
+                    const retryButton = errorDiv.querySelector('button');
+                    retryButton.addEventListener('click', () => {
+                        errorDiv.remove();
+                        uploadFile(file);
+                    });
+
+                    // Insert error message before the upload area
+                    uploadArea.parentNode.insertBefore(errorDiv, uploadArea);
+
+                    // Reset the UI after a delay
+                    setTimeout(() => {
+                        errorDiv.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                        setTimeout(() => {
+                            errorDiv.remove();
+                            resetUpload();
+                        }, 300);
+                    }, 8000);
+                });
+        }
+
+        // Display prediction results
+        function displayResults(data) {
+            // Hide loading, show results
+            loading.style.display = 'none';
+            results.style.display = 'block';
+
+            // Clear previous predictions
+            predictions.innerHTML = '';
+
+            // Add each prediction to the results
+            if (data.predictions && data.predictions.length > 0) {
+                data.predictions.forEach((prediction, index) => {
+                    if (prediction.class && prediction.confidence !== undefined) {
+                        // Convert confidence from 0-1 to percentage (0-100)
+                        const confidence = Math.min(Math.round(prediction.confidence * 100), 100);
+                        const predictionElement = document.createElement('div');
+                        predictionElement.className = 'prediction-item bg-white p-4 rounded-lg shadow-sm border border-gray-100';
+                        predictionElement.innerHTML = `
+                            <div class="flex flex-col gap-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-medium text-gray-800">${index + 1}. ${prediction.class}</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-semibold text-indigo-600">${confidence}%</span>
+                                        <span class="text-xs text-gray-400">confidence</span>
+                                    </div>
+                                </div>
+                                <div class="relative w-full h-3 bg-gray-100 rounded-full overflow-hidden border border-gray-200">
+                                    <div class="absolute inset-0 flex items-center justify-center">
+                                        <div class="w-full h-1.5 bg-gradient-to-r from-gray-200 to-gray-100 rounded-full"></div>
+                                    </div>
+                                    <div 
+                                        class="absolute inset-0 bg-gradient-to-r from-indigo-500 to-indigo-400 rounded-full transition-all duration-1000 ease-out" 
+                                        style="width: ${confidence}%; box-shadow: 0 2px 4px rgba(99, 102, 241, 0.3);"
+                                    ></div>
+                                    <div class="absolute inset-0 flex items-center justify-end pr-2">
+                                        <div class="h-3 w-0.5 bg-white/30"></div>
+                                    </div>
+                                </div>
+                                <div class="flex justify-between text-xs text-gray-400 mt-0.5">
+                                    <span>0%</span>
+                                    <span>100%</span>
+                                </div>
+                            </div>
+                            <!-- Caption Generation Section -->
+                            <div class="mt-6 border-t border-gray-200 pt-4">
+                                <h3 class="text-md font-semibold text-gray-800 mb-3">Generate Social Media Caption</h3>
+                                <div class="flex flex-wrap gap-2 mb-3">
+                                    <button onclick="generateCaption('instagram', ${index})" class="px-3 py-1.5 bg-pink-100 text-pink-700 rounded-full text-xs font-medium hover:bg-pink-200 transition-colors">
+                                        <i class="fab fa-instagram mr-1"></i> Instagram
+                                    </button>
+                                    <button onclick="generateCaption('twitter', ${index})" class="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-200 transition-colors">
+                                        <i class="fab fa-twitter mr-1"></i> Twitter
+                                    </button>
+                                    <button onclick="generateCaption('linkedin', ${index})" class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-100 transition-colors">
+                                        <i class="fab fa-linkedin mr-1"></i> LinkedIn
+                                    </button>
+                                    <button onclick="generateCaption('whatsapp', ${index})" class="px-3 py-1.5 bg-green-100 text-green-700 rounded-full text-xs font-medium hover:bg-green-200 transition-colors">
+                                        <i class="fab fa-whatsapp mr-1"></i> WhatsApp
+                                    </button>
+                                </div>
+                                
+                                <div id="caption-loading-${index}" class="hidden text-center py-3">
+                                    <div class="inline-block animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-indigo-500"></div>
+                                    <p class="mt-1 text-xs text-gray-500">Generating caption...</p>
+                                </div>
+                                
+                                <div id="caption-result-${index}" class="hidden mt-3">
+                                    <div class="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                        <div class="flex justify-between items-start mb-1">
+                                            <h4 class="text-sm font-medium text-gray-700">Suggested Caption:</h4>
+                                            <button onclick="copyToClipboard('caption-text-${index}')" class="text-indigo-600 hover:text-indigo-800 text-xs flex items-center">
+                                                <i class="far fa-copy mr-1 text-xs"></i> Copy
+                                            </button>
+                                        </div>
+                                        <p id="caption-text-${index}" class="whitespace-pre-line text-sm text-gray-800"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        predictions.appendChild(predictionElement);
+                    }
+                });
+            } else {
+                predictions.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p class="mt-2">No objects detected in the image.</p>
+                    </div>
+                `;
+            }
+
+            // Add reset button
+            const resetBtn = document.createElement('button');
+            resetBtn.className = 'mt-6 w-full px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors';
+            resetBtn.textContent = 'Upload Another Image';
+            resetBtn.onclick = resetUpload;
+            predictions.appendChild(resetBtn);
+        }
+
+        // Generate caption for the analyzed image
+        function generateCaption(platform, index = 0) {
+            const captionLoading = document.getElementById(`caption-loading-${index}`);
+            const captionResult = document.getElementById(`caption-result-${index}`);
+            const captionText = document.getElementById(`caption-text-${index}`);
+
+            // Reset previous state
+            if (captionLoading) captionLoading.classList.remove('hidden');
+            if (captionResult) captionResult.classList.add('hidden');
+
+            // Get the base64 image data from the preview
+            const imageData = preview.src;
+
+            // Call the caption generation endpoint
+            fetch('/generate-caption', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    image_data: imageData,
+                    platform: platform
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (captionLoading) captionLoading.classList.add('hidden');
+
+                    if (data.success) {
+                        if (captionText) captionText.textContent = data.caption;
+                        if (captionResult) captionResult.classList.remove('hidden');
+                    } else {
+                        throw new Error(data.error || 'Failed to generate caption');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    if (captionLoading) captionLoading.classList.add('hidden');
+                    alert('Error generating caption: ' + error.message);
+                });
+        }
+
+        // Copy text to clipboard
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            if (!element) return;
+
+            const text = element.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                // Show a small toast notification
+                const toast = document.createElement('div');
+                toast.textContent = 'Copied to clipboard!';
+                toast.className = 'fixed bottom-4 right-4 bg-gray-800 text-white px-4 py-2 rounded-lg shadow-lg text-sm';
+                document.body.appendChild(toast);
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
+
+        // Reset the upload form
+        function resetUpload() {
+            fileInput.value = '';
+            uploadArea.style.display = 'block';
+            results.style.display = 'none';
+            loading.style.display = 'none';
+            preview.src = '';
+            predictions.innerHTML = '';
+
+            // Reset all caption sections
+            document.querySelectorAll('[id^="caption-loading-"], [id^="caption-result-"]').forEach(el => {
+                el.classList.add('hidden');
+            });
+            document.querySelectorAll('[id^="caption-text-"]').forEach(el => {
+                el.textContent = '';
+            });
+        }
+    </script>
+</body>
+
+</html>

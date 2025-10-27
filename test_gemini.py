@@ -1,0 +1,19 @@
+import os
+from dotenv import load_dotenv
+from image_recognition_project.models import GeminiModel
+
+# Load environment variables
+load_dotenv()
+
+# Get API key
+api_key = os.getenv('GEMINI_API_KEY')
+
+if not api_key:
+    print("ERROR: GEMINI_API_KEY not found in environment variables")
+else:
+    print("API Key found, initializing model...")
+    try:
+        model = GeminiModel(api_key=api_key)
+        print("SUCCESS: Gemini model initialized successfully")
+    except Exception as e:
+        print(f"ERROR: Failed to initialize Gemini model: {e}")
