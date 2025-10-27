@@ -242,12 +242,98 @@ def main():
         layout="wide"
     )
     
-    # Title and description
-    st.title("👁️ VisionAI - Image Recognition & Captioning")
+    # Custom CSS to make it look more like the original HTML design
     st.markdown("""
-    Upload an image and let our AI analyze its contents with advanced computer vision technology.
-    Get object recognition results and generate social media captions!
-    """)
+        <style>
+        .main-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .gradient-text {
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+        }
+        .drop-zone {
+            border: 2px dashed #9ca3af;
+            border-radius: 1rem;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(8px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .drop-zone:hover {
+            border-color: #6366f1;
+            background: rgba(255, 255, 255, 0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        .prediction-item {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.5rem;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .prediction-item:hover {
+            transform: translateX(5px);
+            border-left-color: #6366f1;
+        }
+        .confidence-bar {
+            height: 1.5rem;
+            border-radius: 0.75rem;
+            background: linear-gradient(to right, #6366f1, #8b5cf6);
+            margin: 0.5rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+        .confidence-text {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+        .btn {
+            transition: all 0.2s ease;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+        }
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+        }
+        .platform-btn {
+            margin: 0.25rem;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    # Title and description with gradient text
+    st.markdown("""
+        <div class="main-header">
+            <h1><span class="gradient-text">VisionAI</span></h1>
+            <p>Upload an image and let our AI analyze its contents with advanced computer vision technology.</p>
+        </div>
+    """, unsafe_allow_html=True)
     
     # Initialize the model
     model = get_model()
@@ -259,28 +345,31 @@ def main():
     tab1, tab2 = st.tabs(["Image Recognition", "How It Works"])
     
     with tab1:
-        # File uploader
+        # File uploader with custom styling
+        st.markdown('<div class="drop-zone">', unsafe_allow_html=True)
         uploaded_file = st.file_uploader(
-            "Choose an image file",
+            "Drag & drop your image here or click to browse files",
             type=["png", "jpg", "jpeg", "gif"],
+            label_visibility="collapsed",
             help="Supports PNG, JPG, JPEG, and GIF files (Max 16MB)"
         )
+        st.markdown('</div>', unsafe_allow_html=True)
         
         if uploaded_file is not None:
             # Display the uploaded image
             try:
                 image = Image.open(uploaded_file).convert('RGB')
-                st.image(image, caption="Uploaded Image", use_container_width=True)
                 
                 # Preprocess the image
                 with st.spinner("Processing your image..."):
                     img_data = preprocess_image(image)
                     
                     # Make prediction
-                    with st.spinner("Analyzing image with AI..."):
+                    with st.spinner("Analyzing image with AI... This usually takes a few seconds"):
                         predictions = predict(model, img_data, top_k=5)
                 
-                # Display results
+                # Display results in a card layout
+                st.markdown('<div class="card">', unsafe_allow_html=True)
                 st.subheader("Analysis Results")
                 
                 # Create two columns for image preview and predictions
@@ -292,34 +381,57 @@ def main():
                 with col2:
                     st.subheader("Confidence Scores")
                     
-                    # Display predictions with progress bars
+                    # Display predictions with styled progress bars
                     for i, prediction in enumerate(predictions):
                         if 'class' in prediction and 'confidence' in prediction:
                             confidence_percent = min(round(prediction['confidence'] * 100), 100)
-                            st.markdown(f"**{i+1}. {prediction['class']}**")
-                            st.progress(prediction['confidence'])
-                            st.caption(f"Confidence: {confidence_percent}%")
-                            st.markdown("---")
+                            
+                            # Create a styled prediction item
+                            st.markdown(f"""
+                                <div class="prediction-item">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span style="font-weight: 500;">{i+1}. {prediction['class']}</span>
+                                        <span style="font-size: 0.9rem; color: #6b7280;">{confidence_percent}% confidence</span>
+                                    </div>
+                                    <div class="confidence-bar">
+                                        <div style="width: {prediction['confidence']*100}%; height: 100%; background: linear-gradient(to right, #6366f1, #8b5cf6); border-radius: 0.75rem;"></div>
+                                        <div class="confidence-text">{confidence_percent}%</div>
+                                    </div>
+                                </div>
+                            """, unsafe_allow_html=True)
                 
-                # Social Media Caption Generator
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                # Social Media Caption Generator in a card
+                st.markdown('<div class="card">', unsafe_allow_html=True)
                 st.subheader("Generate Social Media Caption")
                 
-                # Platform selection
-                platform = st.selectbox(
-                    "Choose a platform:",
-                    ["Instagram", "Twitter", "LinkedIn", "WhatsApp", "General"],
-                    index=0
-                )
+                # Platform selection buttons
+                platforms = ["Instagram", "Twitter", "LinkedIn", "WhatsApp", "General"]
+                platform_cols = st.columns(len(platforms))
                 
-                # Generate caption button
-                if st.button("Generate Caption", key="generate_caption"):
+                selected_platform = None
+                for i, platform in enumerate(platforms):
+                    if platform_cols[i].button(platform, key=f"platform_{platform.lower()}", use_container_width=True):
+                        selected_platform = platform
+                
+                # Generate caption if a platform is selected
+                if selected_platform:
                     with st.spinner("Generating caption..."):
-                        caption = generate_caption(model, img_data, platform.lower())
-                        st.text_area("Generated Caption:", value=caption, height=100, key="caption_result")
+                        caption = generate_caption(model, img_data, selected_platform.lower())
                         
-                        # Copy to clipboard button
-                        st.code(caption, language="text")
-                        st.info("You can copy the caption above by clicking on it and pressing Ctrl+C (Cmd+C on Mac)")
+                        # Display the generated caption in a styled box
+                        st.markdown(f"""
+                            <div style="background: #f3f4f6; border-radius: 0.5rem; padding: 1rem; margin-top: 1rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                    <span style="font-weight: 500;">Suggested Caption for {selected_platform}:</span>
+                                    <button onclick="navigator.clipboard.writeText('{caption}')" style="background: #6366f1; color: white; border: none; border-radius: 0.25rem; padding: 0.25rem 0.5rem; cursor: pointer;">Copy</button>
+                                </div>
+                                <div style="white-space: pre-wrap; font-size: 0.9rem;">{caption}</div>
+                            </div>
+                        """, unsafe_allow_html=True)
+                
+                st.markdown('</div>', unsafe_allow_html=True)
                 
             except Exception as e:
                 st.error(f"Error processing image: {str(e)}")
