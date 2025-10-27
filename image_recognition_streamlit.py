@@ -365,10 +365,10 @@ def main():
                     img_data = preprocess_image(image)
                     
                     # Make prediction
-                    with st.spinner("Analyzing image with AI... This usually takes a few seconds"):
+                    with st.spinner("Analysing image..."):
                         predictions = predict(model, img_data, top_k=5)
                 
-                # Display results in a card layout
+                # Display results in a card layout with image and predictions side by side
                 st.markdown('<div class="card">', unsafe_allow_html=True)
                 st.subheader("Analysis Results")
                 
@@ -376,7 +376,7 @@ def main():
                 col1, col2 = st.columns(2)
                 
                 with col1:
-                    st.image(image, caption="Processed Image", use_container_width=True)
+                    st.image(image, caption="Uploaded Image")
                 
                 with col2:
                     st.subheader("Confidence Scores")
@@ -412,7 +412,7 @@ def main():
                 
                 selected_platform = None
                 for i, platform in enumerate(platforms):
-                    if platform_cols[i].button(platform, key=f"platform_{platform.lower()}", use_container_width=True):
+                    if platform_cols[i].button(platform, key=f"platform_{platform.lower()}"):
                         selected_platform = platform
                 
                 # Generate caption if a platform is selected
